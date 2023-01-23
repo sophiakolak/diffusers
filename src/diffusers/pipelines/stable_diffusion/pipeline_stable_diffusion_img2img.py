@@ -565,6 +565,7 @@ class StableDiffusionImg2ImgPipeline(DiffusionPipeline):
 
         # 8. Denoising loop
         num_warmup_steps = len(timesteps) - num_inference_steps * self.scheduler.order
+        images = []
         with self.progress_bar(total=num_inference_steps) as progress_bar:
             for i, t in enumerate(timesteps):
                 # expand the latents if we are doing classifier free guidance
@@ -581,6 +582,9 @@ class StableDiffusionImg2ImgPipeline(DiffusionPipeline):
 
                 # compute the previous noisy sample x_t -> x_t-1
                 latents = self.scheduler.step(noise_pred, t, latents, **extra_step_kwargs).prev_sample
+                image = self.decode_latents(latents)
+                image = self.numpy_to_pil(image)
+                images.append(image)
 
                 # call the callback, if provided
                 if i == len(timesteps) - 1 or ((i + 1) > num_warmup_steps and (i + 1) % self.scheduler.order == 0):
@@ -589,16 +593,18 @@ class StableDiffusionImg2ImgPipeline(DiffusionPipeline):
                         callback(i, t, latents)
 
         # 9. Post-processing
-        image = self.decode_latents(latents)
+        #image = self.decode_latents(latents)
+
+        return images
 
         # 10. Run safety checker
-        image, has_nsfw_concept = self.run_safety_checker(image, device, text_embeddings.dtype)
+        #image, has_nsfw_concept = self.run_safety_checker(image, device, text_embeddings.dtype)
 
         # 11. Convert to PIL
-        if output_type == "pil":
-            image = self.numpy_to_pil(image)
+        #if output_type == "pil":
+        #    image = self.numpy_to_pil(image)
 
-        if not return_dict:
-            return (image, has_nsfw_concept)
+        #if not return_dict:
+        #    return (image, has_nsfw_concept)
 
-        return StableDiffusionPipelineOutput(images=image, nsfw_content_detected=has_nsfw_concept)
+        #return StableDiffusionPipelineOutput(images=image, nsfw_content_detected=has_nsfw_concept)
